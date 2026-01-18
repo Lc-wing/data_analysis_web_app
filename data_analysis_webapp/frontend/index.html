@@ -1,0 +1,151 @@
+	<!DOCTYPE html>
+	<html lang="zh-CN">
+	<head>
+	    <meta charset="UTF-8">
+	    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	    <title>智能数据分析工作台</title>
+	    <link rel="stylesheet" href="css/style.css">
+	    <!-- 引入 Vue 3 -->
+	    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+	    <!-- 引入 ECharts -->
+	    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+	    <!-- 引入 Axios -->
+	    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+	</head>
+	<body>
+	    <!-- 动态背景画布 -->
+	    <canvas id="bg-canvas" v-show="isDefaultBg"></canvas>
+	    <!-- 动态壁纸层 -->
+	    <div id="wallpaper" v-if="!isDefaultBg" :style="{ backgroundImage: 'url(' + currentWallpaper + ')' }"></div>
+	    <div id="app">
+	        <header class="glass-panel">
+	            <h1>DataAnalyst Pro</h1>
+	            <button class="icon-btn" @click="toggleWallpaper" title="切换壁纸">
+	                🖼️
+	            </button>
+	        </header>
+	        <main class="glass-panel main-content">
+	            <!-- 左侧操作区 -->
+	            <section class="control-panel">
+	                <!-- 文件上传 -->
+	                <div class="card">
+	                    <h3>1. 数据导入</h3>
+	                    <div class="upload-area" :class="{ 'dragover': isDragOver }"
+	                         @dragover.prevent="isDragOver = true"
+	                         @dragleave.prevent="isDragOver = false"
+	                         @drop.prevent="handleDrop">
+	                        <input type="file" ref="fileInput" @change="handleFileSelect" style="display: none" accept=".csv,.xlsx,.json,.txt">
+	                        <button @click="$refs.fileInput.click()">选择文件</button>
+	                        <p>或将文件拖拽至此</p>
+	                    </div>
+	                    <div v-if="uploadedFile" class="file-info">
+	                        <p>✅ 已上传: {{ uploadedFile.original_filename }}</p>
+	                        <p>行数: {{ uploadedFile.rows }} | 列数: {{ uploadedFile.columns.length }}</p>
+	                    </div>
+	                </div>
+	                <!-- 数据清洗 -->
+	                <div class="card" v-if="uploadedFile">
+	                    <h3>2. 数据清洗</h3>
+	                    <button @click="cleanData" :disabled="loading">清洗数据 (去重/去空)</button>
+	                    <div v-if="cleanResult" class="result-box">
+	                        <p>原始行数: {{ cleanResult.original_rows }}</p>
+	                        <p>清洗后: {{ cleanResult.cleaned_rows }}</p>
+	                        <p>移除: {{ cleanResult.removed_rows }}</p>
+	                    </div>
+	                </div>
+	                <!-- 分析控制 -->
+	                <div class="card" v-if="uploadedFile">
+	                    <h3>3. 数据分析</h3>
+	                    <!-- 统计分析 -->
+	                    <div class="form-group">
+	                        <label>选择统计列:</label>
+	                        <select v-model="selectedCol.stats">
+	                            <option v-for="col in uploadedFile.columns" :key="col" :value="col">{{ col }}</option>
+	                        </select>
+	                        <button @click="getStats" :disabled="loading">查看统计</button>
+	                    </div>
+	                    <!-- 排序 -->
+	                    <div class="form-group">
+	                        <label>排序:</label>
+	                        <select v-model="selectedCol.sort">
+	                            <option v-for="col in uploadedFile.columns" :key="col" :value="col">{{ col }}</option>
+	                        </select>
+	                        <button @click="sortData" :disabled="loading">排序结果</button>
+	                    </div>
+	                    <!-- 相关性分析 -->
+	                    <div class="form-group">
+	                        <label>相关性矩阵:</label>
+	                        <button @click="getCorrelation" :disabled="loading">生成热力图</button>
+	                    </div>
+	                    <!-- 分组聚合 -->
+	                    <div class="form-group">
+	                        <label>分组列:</label>
+	                        <select v-model="selectedCol.group">
+	                            <option v-for="col in uploadedFile.columns" :key="col" :value="col">{{ col }}</option>
+	                        </select>
+	                        <label>数值列:</label>
+	                        <select v-model="selectedCol.agg">
+	                            <option v-for="col in uploadedFile.columns" :key="col" :value="col">{{ col }}</option>
+	                        </select>
+	                        <button @click="groupData" :disabled="loading">分组聚合</button>
+	                    </div>
+	                </div>
+	                <!-- 图表生成 -->
+	                <div class="card" v-if="uploadedFile">
+	                    <h3>4. 可视化</h3>
+	                    <div class="form-group">
+	                        <label>类型:</label>
+	                        <select v-model="chartConfig.type">
+	                            <option value="bar">柱状图</option>
+	                            <option value="pie">饼图</option>
+	                            <option value="line">折线图</option>
+	                        </select>
+	                        <label>X轴/标签:</label>
+	                        <select v-model="chartConfig.label">
+	                            <option v-for="col in uploadedFile.columns" :key="col" :value="col">{{ col }}</option>
+	                        </select>
+	                        <label>Y轴/数值:</label>
+	                        <select v-model="chartConfig.value">
+	                            <option v-for="col in uploadedFile.columns" :key="col" :value="col">{{ col }}</option>
+	                        </select>
+	                        <button @click="generateChart" :disabled="loading">生成图表</button>
+	                    </div>
+	                </div>
+	            </section>
+	            <!-- 右侧展示区 -->
+	            <section class="display-panel">
+	                <!-- 统计结果 -->
+	                <div v-if="statsResult" class="result-card">
+	                    <h4>统计信息: {{ selectedCol.stats }}</h4>
+	                    <div class="stats-grid">
+	                        <div class="stat-item" v-for="(val, key) in statsResult" :key="key">
+	                            <span class="key">{{ key }}</span>
+	                            <span class="value">{{ val }}</span>
+	                        </div>
+	                    </div>
+	                </div>
+	                <!-- 表格/排序结果 -->
+	                <div v-if="tableData.length > 0" class="result-card table-container">
+	                    <h4>数据预览 (前50条)</h4>
+	                    <table>
+	                        <thead>
+	                            <tr>
+	                                <th v-for="col in Object.keys(tableData[0])" :key="col">{{ col }}</th>
+	                            </tr>
+	                        </thead>
+	                        <tbody>
+	                            <tr v-for="(row, idx) in tableData.slice(0, 50)" :key="idx">
+	                                <td v-for="(val, key) in row" :key="key">{{ val }}</td>
+	                            </tr>
+	                        </tbody>
+	                    </table>
+	                </div>
+	                <!-- 图表容器 -->
+	                <div id="chart-container" class="result-card chart-box" v-show="chartInstance"></div>
+	            </section>
+	        </main>
+	    </div>
+	    <script src="js/bg-animation.js"></script>
+	    <script src="js/app.js"></script>
+	</body>
+	</html>

@@ -1,0 +1,170 @@
+	:root {
+	    --glass-bg: rgba(255, 255, 255, 0.15);
+	    --glass-border: rgba(255, 255, 255, 0.2);
+	    --primary-color: #00d2ff;
+	    --text-color: #fff;
+	}
+	body, html {
+	    margin: 0;
+	    padding: 0;
+	    width: 100%;
+	    height: 100%;
+	    overflow: hidden;
+	    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	    color: var(--text-color);
+	}
+	/* 背景层 */
+	#bg-canvas, #wallpaper {
+	    position: fixed;
+	    top: 0;
+	    left: 0;
+	    width: 100%;
+	    height: 100%;
+	    z-index: -1;
+	}
+	/* 初始冷色背景（当 Canvas 加载或 JS 失效时的 fallback，但在 JS 中我们会动态绘制） */
+	body {
+	    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+	}
+	#app {
+	    width: 100%;
+	    height: 100%;
+	    display: flex;
+	    flex-direction: column;
+	    overflow-y: auto; /* 允许内容滚动 */
+	}
+	/* 玻璃拟态面板 */
+	.glass-panel {
+	    background: var(--glass-bg);
+	    backdrop-filter: blur(12px);
+	    -webkit-backdrop-filter: blur(12px);
+	    border: 1px solid var(--glass-border);
+	    border-radius: 12px;
+	    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+	}
+	header {
+	    margin: 20px;
+	    padding: 15px 25px;
+	    display: flex;
+	    justify-content: space-between;
+	    align-items: center;
+	}
+	.main-content {
+	    flex: 1;
+	    margin: 0 20px 20px 20px;
+	    display: flex;
+	    gap: 20px;
+	    padding: 20px;
+	    min-height: 0; /* 防止 flex 溢出 */
+	}
+	/* 左侧控制栏 */
+	.control-panel {
+	    width: 300px;
+	    overflow-y: auto;
+	    padding-right: 10px;
+	    display: flex;
+	    flex-direction: column;
+	    gap: 20px;
+	}
+	/* 右侧展示栏 */
+	.display-panel {
+	    flex: 1;
+	    display: flex;
+	    flex-direction: column;
+	    gap: 20px;
+	    overflow-y: auto;
+	}
+	.card {
+	    background: rgba(0, 0, 0, 0.2);
+	    border-radius: 8px;
+	    padding: 15px;
+	}
+	.card h3 {
+	    margin-top: 0;
+	    border-bottom: 1px solid rgba(255,255,255,0.1);
+	    padding-bottom: 10px;
+	}
+	.form-group {
+	    display: flex;
+	    flex-direction: column;
+	    gap: 8px;
+	    margin-bottom: 10px;
+	}
+	select, button, input {
+	    padding: 8px;
+	    border-radius: 4px;
+	    border: 1px solid var(--glass-border);
+	    background: rgba(255,255,255,0.1);
+	    color: #fff;
+	}
+	button {
+	    background: var(--primary-color);
+	    color: #000;
+	    font-weight: bold;
+	    cursor: pointer;
+	    transition: 0.3s;
+	}
+	button:hover {
+	    filter: brightness(1.2);
+	}
+	button:disabled {
+	    background: #555;
+	    cursor: not-allowed;
+	}
+	.upload-area {
+	    border: 2px dashed rgba(255,255,255,0.3);
+	    padding: 20px;
+	    text-align: center;
+	    border-radius: 8px;
+	    cursor: pointer;
+	}
+	.upload-area.dragover {
+	    border-color: var(--primary-color);
+	    background: rgba(0, 210, 255, 0.1);
+	}
+	.result-box {
+	    margin-top: 10px;
+	    font-size: 0.9em;
+	}
+	.stats-grid {
+	    display: grid;
+	    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+	    gap: 10px;
+	}
+	.stat-item {
+	    background: rgba(255,255,255,0.1);
+	    padding: 10px;
+	    border-radius: 4px;
+	    text-align: center;
+	    display: flex;
+	    flex-direction: column;
+	}
+	.stat-item .key { font-size: 0.8em; opacity: 0.8; }
+	.stat-item .value { font-size: 1.2em; font-weight: bold; color: var(--primary-color); }
+	.chart-box {
+	    min-height: 400px;
+	    width: 100%;
+	}
+	table {
+	    width: 100%;
+	    border-collapse: collapse;
+	    font-size: 0.9em;
+	}
+	th, td {
+	    padding: 8px;
+	    text-align: left;
+	    border-bottom: 1px solid rgba(255,255,255,0.1);
+	}
+	th { background: rgba(0,0,0,0.3); }
+	.icon-btn {
+	    background: none;
+	    border: 2px solid rgba(255,255,255,0.5);
+	    border-radius: 50%;
+	    width: 40px;
+	    height: 40px;
+	    font-size: 1.2em;
+	    display: flex;
+	    align-items: center;
+	    justify-content: center;
+	    padding: 0;
+	}
